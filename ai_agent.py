@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from utils.config import *
-from utils.data_loader import load_data, analyze_data_structure, process_landsoft_data
+from utils.data_loader import load_data, analyze_data_structure, process_landsoft_data, process_google_sheets_data
 
 # Load env
 load_dotenv()
@@ -37,12 +37,15 @@ def load_and_process_data(source_type='sample', sheet_url=None, credentials_path
         # For Excel files, process LandSoft data
         if source_type == 'excel':
             df = process_landsoft_data(df)
+        # For Google Sheets, process data to ensure required columns
+        elif source_type == 'gsheet':
+            df = process_google_sheets_data(df)
         
         # Analyze data structure
         missing_columns = analyze_data_structure(df, source_type)
         
-        # If missing required columns, try to map them
-        if missing_columns and source_type != 'excel':
+        # If missing required columns, try to map them (for non-Excel, non-GSheet sources)
+        if missing_columns and source_type not in ['excel', 'gsheet']:
             df = map_excel_columns(df)
         
         # Validate required columns after processing

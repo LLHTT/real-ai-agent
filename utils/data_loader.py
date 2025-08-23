@@ -106,7 +106,10 @@ def process_landsoft_data(df):
     
     # Generate unique ID if not exists
     if 'id' not in processed_df.columns:
-        processed_df['id'] = processed_df['product_id'].fillna('SP') + '_' + processed_df.index.astype(str)
+        if 'product_id' in processed_df.columns:
+            processed_df['id'] = processed_df['product_id'].fillna('SP') + '_' + processed_df.index.astype(str)
+        else:
+            processed_df['id'] = 'SP_' + processed_df.index.astype(str)
     
     # Process address
     processed_df['address'] = processed_df.apply(
@@ -114,8 +117,16 @@ def process_landsoft_data(df):
         axis=1
     )
     
+    # If address is empty or just commas, use a default
+    processed_df['address'] = processed_df['address'].apply(
+        lambda x: 'N/A' if not x or x.strip() in [',', ''] else x
+    )
+    
     # Process price
-    processed_df['price'] = processed_df['price_text'].apply(parse_price_text)
+    if 'price_text' in processed_df.columns:
+        processed_df['price'] = processed_df['price_text'].apply(parse_price_text)
+    elif 'price' not in processed_df.columns:
+        processed_df['price'] = 0
     
     # Process property type based on transaction type and description
     processed_df['type'] = processed_df.apply(determine_property_type, axis=1)
@@ -130,13 +141,17 @@ def process_landsoft_data(df):
     processed_df['amenities'] = processed_df['description'].apply(extract_amenities)
     
     # Process status based on transaction type
-    processed_df['status'] = processed_df['transaction_type'].apply(
-        lambda x: 'available' if x == 'Cần bán' else 'for_rent' if x == 'Cho thuê' else 'available'
-    )
+    if 'transaction_type' in processed_df.columns:
+        processed_df['status'] = processed_df['transaction_type'].apply(
+            lambda x: 'available' if x == 'Cần bán' else 'for_rent' if x == 'Cho thuê' else 'available'
+        )
+    else:
+        processed_df['status'] = 'available'
     
     # Add posted_date
     processed_df['posted_date'] = processed_df['registration_date'].apply(
-        lambda x: x.strftime('%Y-%m-%d') if pd.notna(x) else datetime.now().strftime('%Y-%m-%d')
+        lambda x: x.strftime('%Y-%m-%d') if pd.notna(x) and hasattr(x, 'strftime') else 
+                 (x if pd.notna(x) and isinstance(x, str) else datetime.now().strftime('%Y-%m-%d'))
     )
     
     print(f"✅ Processed {len(processed_df)} records")
@@ -300,6 +315,47 @@ def load_google_sheet(sheet_url, credentials_path='credentials.json'):
             "2. Service account has been granted access\n"
             "3. Sheet structure matches expected format"
         )
+
+def process_google_sheets_data(df):
+    """
+    Process Google Sheets data to ensure all required columns are present
+    """
+    print("🔄 Processing Google Sheets data...")
+    
+    # Create a copy for processing
+    processed_df = df.copy()
+    
+    # Ensure required columns exist with default values
+    required_columns = {
+        'id': lambda df: df.index.astype(str) if 'id' not in df.columns else df['id'],
+        'type': lambda df: ['Nhà phố'] * len(df) if 'type' not in df.columns else df['type'],
+        'district': lambda df: ['Quận 1'] * len(df) if 'district' not in df.columns else df['district'],
+        'ward': lambda df: ['Bến Nghé'] * len(df) if 'ward' not in df.columns else df['ward'],
+        'address': lambda df: df['address'] if 'address' in df.columns else 
+                             (df['district'] + ', ' + df['ward'] if 'district' in df.columns and 'ward' in df.columns else ['N/A'] * len(df)),
+        'price': lambda df: [0] * len(df) if 'price' not in df.columns else df['price'],
+        'area': lambda df: [0] * len(df) if 'area' not in df.columns else df['area'],
+        'bedrooms': lambda df: [0] * len(df) if 'bedrooms' not in df.columns else df['bedrooms'],
+        'direction': lambda df: ['N/A'] * len(df) if 'direction' not in df.columns else df['direction'],
+        'legal_status': lambda df: ['Sổ hồng'] * len(df) if 'legal_status' not in df.columns else df['legal_status'],
+        'amenities': lambda df: ['Cơ bản'] * len(df) if 'amenities' not in df.columns else df['amenities'],
+        'description': lambda df: ['N/A'] * len(df) if 'description' not in df.columns else df['description']
+    }
+    
+    # Add missing columns with default values
+    for col, default_func in required_columns.items():
+        if col not in processed_df.columns:
+            processed_df[col] = default_func(processed_df)
+            print(f"  ✅ Added missing column '{col}' with default values")
+    
+    # Ensure numeric columns are properly formatted
+    numeric_columns = ['price', 'area', 'bedrooms']
+    for col in numeric_columns:
+        if col in processed_df.columns:
+            processed_df[col] = pd.to_numeric(processed_df[col], errors='coerce').fillna(0)
+    
+    print(f"✅ Processed {len(processed_df)} records")
+    return processed_df
 
 def analyze_data_structure(df, source_type):
     """Analyze and report data structure"""
