@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from utils.config import *
-from utils.data_loader import load_data, analyze_data_structure
+from utils.data_loader import load_data, analyze_data_structure, process_landsoft_data
 
 # Load env
 load_dotenv()
@@ -34,38 +34,73 @@ def load_and_process_data(source_type='sample', sheet_url=None, credentials_path
         else:
             df = load_data(source_type=source_type, file_path=file_path)
         
+        # For Excel files, process LandSoft data
+        if source_type == 'excel':
+            df = process_landsoft_data(df)
+        
         # Analyze data structure
         missing_columns = analyze_data_structure(df, source_type)
         
         # If missing required columns, try to map them
-        if missing_columns:
+        if missing_columns and source_type != 'excel':
             df = map_excel_columns(df)
         
-        # Validate required columns after mapping
+        # Validate required columns after processing
         required_columns = ['id', 'type', 'district', 'ward', 'address', 'price', 'area', 'bedrooms', 'direction', 'legal_status', 'amenities', 'description']
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
-            raise ValueError(f"Missing required columns after mapping: {missing_columns}")
+            raise ValueError(f"Missing required columns after processing: {missing_columns}")
         
-        # Tạo text embedding cho mỗi sản phẩm
-        df['text'] = df.apply(lambda row: f"""
-        Mã SP: {row['id']}
-        Loại hình: {row['type']}
-        Vị trí: {row['district']}, {row['ward']}
-        Địa chỉ: {row['address']}
-        Giá: {row['price']:,.0f} VND
-        Diện tích: {row['area']}m²
-        Phòng ngủ: {row['bedrooms']}
-        Hướng: {row['direction']}
-        Pháp lý: {row['legal_status']}
-        Tiện ích: {row['amenities']}
-        Mô tả: {row['description']}
-        """, axis=1)
+        # Tạo text embedding cho mỗi sản phẩm với thông tin chi tiết hơn
+        df['text'] = df.apply(create_detailed_text_embedding, axis=1)
         
         return df
         
     except Exception as e:
         raise Exception(f"Error loading data from {source_type}: {str(e)}")
+
+def create_detailed_text_embedding(row):
+    """
+    Create detailed text embedding for LandSoft data
+    """
+    # Format price
+    price_display = "Thương lượng" if row['price'] == 0 else f"{row['price']:,.0f} VND"
+    
+    # Format area with dimensions if available
+    area_info = f"{row['area']}m²"
+    if 'width' in row and 'length' in row and pd.notna(row['width']) and pd.notna(row['length']):
+        area_info += f" ({row['width']}m x {row['length']}m)"
+    
+    # Format transaction type
+    transaction_type = row.get('transaction_type', 'Cần bán')
+    
+    # Format owner and agent info
+    owner_info = f"Chủ nhà: {row.get('owner', 'N/A')}" if pd.notna(row.get('owner')) else ""
+    agent_info = f"Môi giới: {row.get('agent_name', 'N/A')}" if pd.notna(row.get('agent_name')) else ""
+    
+    # Format phone
+    phone_info = f"ĐT: {row.get('phone', 'N/A')}" if pd.notna(row.get('phone')) else ""
+    
+    # Create comprehensive text
+    text = f"""
+    Mã SP: {row['id']}
+    Loại giao dịch: {transaction_type}
+    Loại hình: {row['type']}
+    Vị trí: {row['district']}, {row['ward']}
+    Địa chỉ: {row['address']}
+    Giá: {price_display}
+    Diện tích: {area_info}
+    Phòng ngủ: {row['bedrooms']}
+    Hướng: {row['direction']}
+    Pháp lý: {row['legal_status']}
+    Tiện ích: {row['amenities']}
+    {owner_info}
+    {agent_info}
+    {phone_info}
+    Mô tả: {row['description']}
+    """
+    
+    return text.strip()
 
 def map_excel_columns(df):
     """Map Excel columns to expected format"""

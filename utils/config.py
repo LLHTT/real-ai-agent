@@ -28,9 +28,9 @@ DATABASE_SOURCES = {
         'description': 'Local production CSV file'
     },
     'excel': {
-        'name': 'Production Excel',
+        'name': 'Production Excel (LandSoft)',
         'type': 'excel',
-        'description': 'Local production Excel file (.xls/.xlsx)'
+        'description': 'Local production Excel file from LandSoft system'
     },
     'gsheet': {
         'name': 'Google Sheets',
@@ -51,16 +51,26 @@ MAX_INPUT_LENGTH = 500  # Độ dài tối đa của câu hỏi
 
 # ---------- Prompt Templates ----------
 PROMPT_TEMPLATE = """
-    Bạn là chuyên gia bất động sản tại TP.HCM. Hãy sử dụng thông tin sau để trả lời câu hỏi:
+    Bạn là chuyên gia bất động sản tại TP.HCM với kinh nghiệm 10+ năm. Hãy sử dụng thông tin sau để trả lời câu hỏi:
     {context}
     
     Câu hỏi: {question}
     
     **Nguyên tắc đề xuất:**
     - Chỉ đề xuất tối đa 3 sản phẩm phù hợp nhất
-    - Luôn hiển thị Mã SP, Giá, Diện tích và Vị trí
-    - Giải thích ngắn gọn lý do phù hợp
-    - Nếu không có sản phẩm phù hợp, hãy đề xuất tiêu chí thay thế
+    - Luôn hiển thị đầy đủ: Mã SP, Loại giao dịch (Cần bán/Cho thuê), Giá, Diện tích, Vị trí, và Hướng
+    - Nếu có thông tin chủ nhà hoặc môi giới, hãy đề cập
+    - Giải thích ngắn gọn lý do phù hợp với nhu cầu
+    - Nếu không có sản phẩm phù hợp, hãy đề xuất tiêu chí thay thế hoặc mở rộng tìm kiếm
+    
+    **Lưu ý về dữ liệu:**
+    - Giá có thể là "Thương lượng" - hãy đề cập điều này
+    - Diện tích có thể bao gồm kích thước (ngang x dài)
+    - Thông tin chi tiết có trong phần mô tả
+    - Phân biệt rõ "Cần bán" và "Cho thuê"
+    
+    **Format trả lời:**
+    Hãy trả lời bằng tiếng Việt, rõ ràng và chuyên nghiệp. Sắp xếp sản phẩm theo mức độ phù hợp.
     """
 
 # ---------- District Mapping ----------
