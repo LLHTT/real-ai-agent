@@ -9,6 +9,7 @@ VECTOR_DB_DIR = BASE_DIR / 'chroma_db'
 # File paths
 SAMPLE_DATA_PATH = DATA_DIR / 'sample_real_estate.csv'
 PRODUCTION_DATA_PATH = DATA_DIR / 'production_data.csv'  # Cho giai đoạn sau
+EXCEL_DATA_PATH = DATA_DIR / 'sample_landsoft.xls'  # Excel file path
 
 # ---------- Google Sheets Config ----------
 GOOGLE_CREDENTIALS_PATH = BASE_DIR / 'credentials.json'
@@ -25,6 +26,11 @@ DATABASE_SOURCES = {
         'name': 'Production CSV',
         'type': 'csv', 
         'description': 'Local production CSV file'
+    },
+    'excel': {
+        'name': 'Production Excel',
+        'type': 'excel',
+        'description': 'Local production Excel file (.xls/.xlsx)'
     },
     'gsheet': {
         'name': 'Google Sheets',

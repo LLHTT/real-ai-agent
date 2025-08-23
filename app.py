@@ -36,6 +36,25 @@ with st.sidebar:
     source_info = DATABASE_SOURCES[selected_source]
     st.info(f"**{source_info['name']}**\n{source_info['description']}")
     
+    # File upload for CSV/Excel
+    file_path = None
+    if selected_source in ['csv', 'excel']:
+        st.subheader("📁 Upload File")
+        uploaded_file = st.file_uploader(
+            f"Upload {selected_source.upper()} file:",
+            type=['csv', 'xls', 'xlsx'] if selected_source == 'excel' else ['csv'],
+            help=f"Upload your {selected_source.upper()} file here"
+        )
+        
+        if uploaded_file is not None:
+            # Save uploaded file temporarily
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{selected_source}') as tmp_file:
+                tmp_file.write(uploaded_file.getvalue())
+                file_path = tmp_file.name
+            
+            st.success(f"✅ File uploaded: {uploaded_file.name}")
+    
     # Google Sheets specific settings
     sheet_url = None
     if selected_source == 'gsheet':
@@ -67,13 +86,16 @@ with st.sidebar:
     if st.button("🔄 Khởi tạo Agent", type="primary"):
         if selected_source == 'gsheet' and not sheet_url:
             st.error("Vui lòng nhập Google Sheet URL")
+        elif selected_source in ['csv', 'excel'] and not file_path:
+            st.error(f"Vui lòng upload file {selected_source.upper()}")
         else:
             with st.spinner("Đang khởi tạo AI Agent..."):
                 try:
                     # Create new agent
                     agent, df = create_agent(
                         source_type=selected_source,
-                        sheet_url=sheet_url
+                        sheet_url=sheet_url,
+                        file_path=file_path
                     )
                     
                     # Store in session state
@@ -90,70 +112,66 @@ with st.sidebar:
     
     # Usage Instructions
     st.info("""
-    **Hướng dẫn sử dụng:**
-    - Chọn nguồn dữ liệu phù hợp
-    - Nhấn "Khởi tạo Agent" để cập nhật
-    - Nhập nhu cầu khách hàng bằng tiếng Việt tự nhiên
-    - Ví dụ: 
-      "Cần nhà phố Quận 7 giá dưới 20 tỷ, 3 phòng ngủ"
-      "Tìm căn hộ trung tâm có hồ bơi, giá 5-8 tỷ"
+    **💡 Cách sử dụng:**
+    1. Chọn nguồn dữ liệu phù hợp
+    2. Upload file hoặc nhập URL Google Sheets
+    3. Nhấn "Khởi tạo Agent"
+    4. Bắt đầu chat với AI
     """)
 
-# Initialize session state
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "agent" not in st.session_state:
-    st.session_state.agent = get_default_agent()
-if "data_source" not in st.session_state:
-    st.session_state.data_source = 'sample'
-
-# Display current data source
-try:
-    if st.session_state.data_source and st.session_state.data_source in DATABASE_SOURCES:
-        source_info = DATABASE_SOURCES[st.session_state.data_source]
-        st.info(f"📊 **Nguồn dữ liệu hiện tại:** {source_info['name']}")
-except:
-    pass  # Ignore session state errors when not running in Streamlit
-
-# Chat interface
-try:
+# Main chat interface
+if 'agent' not in st.session_state:
+    st.info(" Vui lòng chọn nguồn dữ liệu và khởi tạo Agent ở sidebar")
+else:
+    # Chat interface
+    st.subheader("💬 Chat với AI")
+    
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    
+    # Display chat messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-
-    if prompt := st.chat_input("Nhập nhu cầu khách hàng..."):
-        # Check if agent is available
-        if st.session_state.agent is None:
-            st.error("❌ Agent chưa được khởi tạo. Vui lòng chọn nguồn dữ liệu và nhấn 'Khởi tạo Agent'")
-        else:
-            st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    # Chat input
+    if prompt := st.chat_input("Nhập câu hỏi của bạn..."):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Display assistant response
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
             
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            
-            with st.chat_message("assistant"):
-                message_placeholder = st.empty()
-                full_response = ""
+            try:
+                # Get response from agent
+                response = st.session_state.agent.invoke(prompt)
                 
-                # Xử lý với AI agent
-                try:
-                    start_time = time.time()
-                    response = st.session_state.agent.invoke(prompt)
-                    processing_time = time.time() - start_time
-                    
-                    # Hiển thị từng từ với hiệu ứng gõ
-                    for chunk in response.split():
-                        full_response += chunk + " "
-                        time.sleep(0.05)
-                        message_placeholder.markdown(full_response + "▌")
-                    
-                    message_placeholder.markdown(full_response)
-                    st.caption(f"⏱️ Thời gian xử lý: {processing_time:.2f}s")
-                    
-                except Exception as e:
-                    st.error(f"Lỗi: {str(e)}")
-                    full_response = f"Xin lỗi, có lỗi xảy ra: {str(e)}"
-            
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-except:
-    pass  # Ignore session state errors when not running in Streamlit
+                # Simulate streaming response
+                for chunk in response.split():
+                    full_response += chunk + " "
+                    time.sleep(0.05)
+                    message_placeholder.markdown(full_response + "▌")
+                
+                message_placeholder.markdown(full_response)
+                
+            except Exception as e:
+                message_placeholder.error(f"❌ Lỗi: {str(e)}")
+                full_response = f"Xin lỗi, có lỗi xảy ra: {str(e)}"
+        
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+# Footer
+st.divider()
+st.markdown("""
+<div style='text-align: center; color: #666;'>
+    <p>🏠 Real Estate AI Agent - Powered by OpenAI & LangChain</p>
+</div>
+""", unsafe_allow_html=True)
