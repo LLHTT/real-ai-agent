@@ -1,6 +1,6 @@
 import os
 import streamlit as st
-from ai_agent import create_agent, get_default_agent
+from ai_agent import create_agent
 from utils.config import DATABASE_SOURCES, DEFAULT_SHEET_URL
 import time
 
@@ -14,9 +14,14 @@ with st.sidebar:
     st.header("Cài đặt")
     
     # OpenAI API Key
-    api_key = st.text_input("OpenAI API Key", type="password")
+    api_key = st.text_input("OpenAI API Key", type="password", help="Enter your OpenAI API key to enable AI features")
+    
+    # Set API key in environment if provided
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key
+        st.success("✅ API Key set successfully!")
+    else:
+        st.warning("⚠️ Please enter your OpenAI API key to use the AI agent")
     
     st.divider()
     
@@ -84,7 +89,10 @@ with st.sidebar:
     
     # Initialize/Update Agent Button
     if st.button("🔄 Khởi tạo Agent", type="primary"):
-        if selected_source == 'gsheet' and not sheet_url:
+        # Check if API key is provided
+        if not api_key:
+            st.error("❌ Vui lòng nhập OpenAI API Key trước khi khởi tạo Agent")
+        elif selected_source == 'gsheet' and not sheet_url:
             st.error("Vui lòng nhập Google Sheet URL")
         elif selected_source in ['csv', 'excel'] and not file_path:
             st.error(f"Vui lòng upload file {selected_source.upper()}")
@@ -102,26 +110,43 @@ with st.sidebar:
                     st.session_state.agent = agent
                     st.session_state.data_source = selected_source
                     st.session_state.dataframe = df
+                    st.session_state.api_key_set = True
                     
                     st.success(f"✅ Agent đã được khởi tạo với {len(df)} sản phẩm từ {source_info['name']}")
                     
                 except Exception as e:
                     st.error(f"❌ Lỗi khởi tạo agent: {str(e)}")
+                    if "api_key" in str(e).lower():
+                        st.info("💡 Hãy kiểm tra lại OpenAI API Key của bạn")
     
     st.divider()
     
     # Usage Instructions
     st.info("""
     **💡 Cách sử dụng:**
-    1. Chọn nguồn dữ liệu phù hợp
-    2. Upload file hoặc nhập URL Google Sheets
-    3. Nhấn "Khởi tạo Agent"
-    4. Bắt đầu chat với AI
+    1. Nhập OpenAI API Key
+    2. Chọn nguồn dữ liệu phù hợp
+    3. Upload file hoặc nhập URL Google Sheets
+    4. Nhấn "Khởi tạo Agent"
+    5. Bắt đầu chat với AI
     """)
 
 # Main chat interface
-if 'agent' not in st.session_state:
-    st.info(" Vui lòng chọn nguồn dữ liệu và khởi tạo Agent ở sidebar")
+if 'agent' not in st.session_state or not st.session_state.get('api_key_set', False):
+    st.info("""
+    🚀 **Chào mừng đến với AI Trợ lý Bất động sản!**
+    
+    **Để bắt đầu:**
+    1. Nhập **OpenAI API Key** ở sidebar bên trái
+    2. Chọn **nguồn dữ liệu** (khuyến nghị: "Production Excel (LandSoft)")
+    3. Nhấn **"🔄 Khởi tạo Agent"**
+    4. Bắt đầu **chat** với AI!
+    
+    **💡 Không có API Key?**
+    - Đăng ký tại [OpenAI Platform](https://platform.openai.com/)
+    - Tạo API key mới
+    - Copy và paste vào ô "OpenAI API Key"
+    """)
 else:
     # Chat interface
     st.subheader("💬 Chat với AI")

@@ -181,6 +181,11 @@ def init_vector_store(df, source_type='sample'):
         source_type: Source type for cache management
     """
     try:
+        # Check if API key is set
+        current_api_key = os.getenv('OPENAI_API_KEY')
+        if not current_api_key or current_api_key == 'your_openai_api_key_here':
+            raise ValueError("OpenAI API key is not set. Please enter your API key in the sidebar.")
+        
         texts = df['text'].tolist()
         embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
         
@@ -197,7 +202,10 @@ def init_vector_store(df, source_type='sample'):
         return vector_store.as_retriever(search_kwargs={"k": TOP_K_RESULTS})
         
     except Exception as e:
-        raise Exception(f"Error initializing vector store: {str(e)}")
+        if "api_key" in str(e).lower():
+            raise ValueError("OpenAI API key is not set or invalid. Please check your API key in the sidebar.")
+        else:
+            raise Exception(f"Error initializing vector store: {str(e)}")
 
 # Tạo AI chain
 def create_agent(source_type='sample', sheet_url=None, credentials_path=None, file_path=None):
@@ -211,6 +219,11 @@ def create_agent(source_type='sample', sheet_url=None, credentials_path=None, fi
         file_path: Optional custom file path for csv/excel
     """
     try:
+        # Check if API key is set
+        current_api_key = os.getenv('OPENAI_API_KEY')
+        if not current_api_key or current_api_key == 'your_openai_api_key_here':
+            raise ValueError("OpenAI API key is not set. Please enter your API key in the sidebar.")
+        
         # Load and process data
         df = load_and_process_data(source_type, sheet_url, credentials_path, file_path)
         
@@ -238,6 +251,3 @@ def create_agent(source_type='sample', sheet_url=None, credentials_path=None, fi
 def get_default_agent():
     """Get default agent using sample data"""
     return create_agent(source_type='sample')
-
-# Global agent instance (will be updated based on user selection)
-real_estate_agent = get_default_agent()
