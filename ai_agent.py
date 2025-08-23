@@ -82,8 +82,13 @@ def create_detailed_text_embedding(row):
     phone_info = f"ĐT: {row.get('phone', 'N/A')}" if pd.notna(row.get('phone')) else ""
     
     # Create comprehensive text
+    # Show both Gallery ID and Product ID if available
+    id_display = f"Mã SP: {row['id']}"
+    if 'product_id' in row and pd.notna(row['product_id']):
+        id_display += f" (Mã sản phẩm: {row['product_id']})"
+    
     text = f"""
-    Mã SP: {row['id']}
+    {id_display}
     Loại giao dịch: {transaction_type}
     Loại hình: {row['type']}
     Vị trí: {row['district']}, {row['ward']}

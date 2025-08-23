@@ -44,7 +44,8 @@ This guide will help you set up Google Sheets as a data source for the Real Esta
 
 Your Google Sheet should have the following columns:
 
-- `id` - Product ID
+- `id` - Gallery ID (sequential number: 1, 2, 3, ...)
+- `product_id` - Product ID (Mã sản phẩm, e.g., "SP001", "NH002")
 - `type` - Property type (e.g., "Căn hộ", "Nhà phố")
 - `district` - District name
 - `ward` - Ward name
@@ -123,7 +124,7 @@ Your Google Sheet should have the following columns:
 
 ## Example Google Sheet Structure
 
-| id    | type    | district | ward        | address        | price       | area | bedrooms | direction | legal_status | amenities   | description         |
-| ----- | ------- | -------- | ----------- | -------------- | ----------- | ---- | -------- | --------- | ------------ | ----------- | ------------------- |
-| SP001 | Căn hộ  | Quận 7   | Phú Mỹ Hưng | 123 ABC Street | 5000000000  | 80   | 2        | Đông      | Sổ hồng      | Hồ bơi, Gym | Căn hộ cao cấp...   |
-| SP002 | Nhà phố | Quận 1   | Bến Nghé    | 456 XYZ Street | 15000000000 | 120  | 4        | Tây       | Sổ hồng      | Sân thượng  | Nhà phố mặt tiền... |
+| id  | product_id | type    | district | ward        | address        | price       | area | bedrooms | direction | legal_status | amenities   | description         |
+| --- | ---------- | ------- | -------- | ----------- | -------------- | ----------- | ---- | -------- | --------- | ------------ | ----------- | ------------------- |
+| 1   | SP001      | Căn hộ  | Quận 7   | Phú Mỹ Hưng | 123 ABC Street | 5000000000  | 80   | 2        | Đông      | Sổ hồng      | Hồ bơi, Gym | Căn hộ cao cấp...   |
+| 2   | NH002      | Nhà phố | Quận 1   | Bến Nghé    | 456 XYZ Street | 15000000000 | 120  | 4        | Tây       | Sổ hồng      | Sân thượng  | Nhà phố mặt tiền... |

@@ -58,7 +58,7 @@ PROMPT_TEMPLATE = """
     
     **Nguyên tắc đề xuất:**
     - Chỉ đề xuất tối đa 3 sản phẩm phù hợp nhất
-    - Luôn hiển thị đầy đủ: Mã SP, Loại giao dịch (Cần bán/Cho thuê), Giá, Diện tích, Vị trí, và Hướng
+    - Luôn hiển thị đầy đủ: Mã SP (Gallery ID), Mã sản phẩm (nếu có), Loại giao dịch (Cần bán/Cho thuê), Giá, Diện tích, Vị trí, và Hướng
     - Nếu có thông tin chủ nhà hoặc môi giới, hãy đề cập
     - Giải thích ngắn gọn lý do phù hợp với nhu cầu
     - Nếu không có sản phẩm phù hợp, hãy đề xuất tiêu chí thay thế hoặc mở rộng tìm kiếm

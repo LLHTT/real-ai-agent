@@ -64,20 +64,21 @@ The application supports three data sources:
 
 Your data source must include these columns:
 
-| Column         | Type    | Description          | Example             |
-| -------------- | ------- | -------------------- | ------------------- |
-| `id`           | string  | Property ID          | "SP001"             |
-| `type`         | string  | Property type        | "Căn hộ", "Nhà phố" |
-| `district`     | string  | District name        | "Quận 7"            |
-| `ward`         | string  | Ward name            | "Phú Mỹ Hưng"       |
-| `address`      | string  | Full address         | "123 ABC Street"    |
-| `price`        | numeric | Price in VND         | 5000000000          |
-| `area`         | numeric | Area in m²           | 80                  |
-| `bedrooms`     | numeric | Number of bedrooms   | 2                   |
-| `direction`    | string  | Direction            | "Đông", "Tây"       |
-| `legal_status` | string  | Legal status         | "Sổ hồng"           |
-| `amenities`    | string  | Amenities list       | "Hồ bơi, Gym"       |
-| `description`  | string  | Property description | "Căn hộ cao cấp..." |
+| Column         | Type    | Description                    | Example             |
+| -------------- | ------- | ------------------------------ | ------------------- |
+| `id`           | string  | Gallery ID (sequential number) | "1", "2", "3"       |
+| `product_id`   | string  | Product ID (Mã sản phẩm)       | "SP001", "NH002"    |
+| `type`         | string  | Property type                  | "Căn hộ", "Nhà phố" |
+| `district`     | string  | District name                  | "Quận 7"            |
+| `ward`         | string  | Ward name                      | "Phú Mỹ Hưng"       |
+| `address`      | string  | Full address                   | "123 ABC Street"    |
+| `price`        | numeric | Price in VND                   | 5000000000          |
+| `area`         | numeric | Area in m²                     | 80                  |
+| `bedrooms`     | numeric | Number of bedrooms             | 2                   |
+| `direction`    | string  | Direction                      | "Đông", "Tây"       |
+| `legal_status` | string  | Legal status                   | "Sổ hồng"           |
+| `amenities`    | string  | Amenities list                 | "Hồ bơi, Gym"       |
+| `description`  | string  | Property description           | "Căn hộ cao cấp..." |
 
 ## 🔧 Configuration
 
