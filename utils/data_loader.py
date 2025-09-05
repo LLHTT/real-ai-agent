@@ -4,6 +4,7 @@ from google.oauth2.service_account import Credentials
 from utils.config import SAMPLE_DATA_PATH, PRODUCTION_DATA_PATH, EXCEL_DATA_PATH
 import os
 import re
+import json
 from datetime import datetime
 
 def load_data(source_type='sample', sheet_url=None, credentials_path='credentials.json', file_path=None):
@@ -280,16 +281,24 @@ def load_google_sheet(sheet_url, credentials_path='credentials.json'):
     # Set up authentication
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
     
-    if not os.path.exists(credentials_path):
-        raise FileNotFoundError(
-            f"Google credentials file not found at {credentials_path}. "
-            "Please download from Google Cloud Console"
-        )
+    # Check for environment variable first (for deployment)
+    google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
     
-    creds = Credentials.from_service_account_file(
-        credentials_path,
-        scopes=scopes
-    )
+    if google_creds_json:
+        # Use credentials from environment variable
+        try:
+            creds_dict = json.loads(google_creds_json)
+            creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON in GOOGLE_CREDENTIALS_JSON environment variable")
+    elif os.path.exists(credentials_path):
+        # Fallback to file-based credentials (for local development)
+        creds = Credentials.from_service_account_file(credentials_path, scopes=scopes)
+    else:
+        raise FileNotFoundError(
+            f"Google credentials not found. Please set GOOGLE_CREDENTIALS_JSON environment variable "
+            f"or provide credentials file at {credentials_path}"
+        )
     
     # Connect to Google Sheets
     client = gspread.authorize(creds)
