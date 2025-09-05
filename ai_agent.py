@@ -29,8 +29,12 @@ def load_and_process_data(source_type='sample', sheet_url=None, credentials_path
         if source_type == 'gsheet':
             if not sheet_url:
                 raise ValueError("Sheet URL is required for Google Sheets source")
-            creds_path = credentials_path or str(GOOGLE_CREDENTIALS_PATH)
-            df = load_data(source_type='gsheet', sheet_url=sheet_url, credentials_path=creds_path)
+            # Only pass credentials_path if explicitly provided (for local development)
+            # In deployment, let load_data use environment variable
+            if credentials_path:
+                df = load_data(source_type='gsheet', sheet_url=sheet_url, credentials_path=credentials_path)
+            else:
+                df = load_data(source_type='gsheet', sheet_url=sheet_url)
         else:
             df = load_data(source_type=source_type, file_path=file_path)
         
