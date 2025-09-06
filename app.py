@@ -82,9 +82,11 @@ with st.sidebar:
         if not sheet_url:
             st.warning("⚠️ Vui lòng nhập Google Sheet URL để sử dụng dữ liệu từ Google Sheets")
         
-        # Check for credentials file
+        # Check for credentials (file or environment variable)
         credentials_path = "credentials.json"
-        if not os.path.exists(credentials_path):
+        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+        
+        if not os.path.exists(credentials_path) and not google_creds_json:
             st.error("❌ Không tìm thấy file credentials.json")
             st.info("""
             **Để sử dụng Google Sheets:**
@@ -93,6 +95,10 @@ with st.sidebar:
             3. Đặt file vào thư mục gốc của dự án
             4. Chia sẻ Google Sheet với email của Service Account
             """)
+        elif google_creds_json:
+            st.success("✅ Google credentials configured via environment variable")
+        elif os.path.exists(credentials_path):
+            st.success("✅ Google credentials file found")
     
     st.divider()
     
