@@ -334,6 +334,70 @@ def process_google_sheets_data(df):
     # Create a copy for processing
     processed_df = df.copy()
     
+    # Map Vietnamese column names to English names
+    column_mapping = {
+        'Gallery': 'id',
+        'Mã sản phẩm': 'product_id', 
+        'Nhu cầu': 'transaction_type',
+        'Loại đường': 'street_type',
+        'Tên đường': 'street_name',
+        'Số nhà': 'house_number',
+        'Xã/Phường': 'ward',
+        'Quận/huyện': 'district',
+        'Ngang XD': 'width',
+        'Dài XD': 'length', 
+        'Diện tích': 'area',
+        'Tổng giá text': 'price_text',
+        'Hướng': 'direction',
+        'Chủ nhà': 'owner',
+        'Điện thoại': 'phone',
+        'Diễn giải': 'description',
+        'Ngày ĐK': 'registration_date',
+        'Ngày cập nhật': 'update_date',
+        'Tỷ lề MG': 'commission_rate',
+        'CV môi giới': 'agent_name',
+        'CV đăng tin': 'poster_name'
+    }
+    
+    # Apply column mapping
+    processed_df = processed_df.rename(columns=column_mapping)
+    
+    # Create missing columns with mapped data
+    if 'product_id' in processed_df.columns and 'id' not in processed_df.columns:
+        processed_df['id'] = processed_df['product_id']
+    
+    if 'transaction_type' in processed_df.columns:
+        # Map transaction types
+        transaction_mapping = {
+            'Cần bán': 'Cần bán',
+            'Cần thuê': 'Cần thuê', 
+            'Cho thuê': 'Cho thuê'
+        }
+        processed_df['type'] = processed_df['transaction_type'].map(transaction_mapping).fillna('Cần bán')
+    
+    if 'street_name' in processed_df.columns and 'house_number' in processed_df.columns:
+        processed_df['address'] = processed_df['house_number'].astype(str) + ' ' + processed_df['street_name'].astype(str)
+    
+    if 'price_text' in processed_df.columns:
+        # Extract numeric price from price_text
+        import re
+        def extract_price(price_text):
+            if pd.isna(price_text):
+                return 0
+            # Extract numbers from price text
+            numbers = re.findall(r'[\d,]+', str(price_text))
+            if numbers:
+                # Remove commas and convert to int
+                return int(numbers[0].replace(',', ''))
+            return 0
+        processed_df['price'] = processed_df['price_text'].apply(extract_price)
+    
+    if 'owner' in processed_df.columns:
+        processed_df['amenities'] = 'Cơ bản'  # Default amenities
+    
+    if 'description' in processed_df.columns:
+        processed_df['legal_status'] = 'Sổ hồng'  # Default legal status
+    
     # Ensure required columns exist with default values
     required_columns = {
         'id': lambda df: df.index.astype(str) if 'id' not in df.columns else df['id'],

@@ -201,15 +201,37 @@ def init_vector_store(df, source_type='sample'):
         texts = df['text'].tolist()
         embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
         
-        # Create unique collection name based on source type
-        collection_name = f"real_estate_{source_type}"
+        # Create unique collection name based on source type and timestamp
+        import time
+        timestamp = int(time.time())
+        collection_name = f"real_estate_{source_type}_{timestamp}"
         
-        vector_store = Chroma.from_texts(
-            texts=texts,
-            embedding=embeddings,
-            persist_directory=str(VECTOR_DB_DIR),
-            collection_name=collection_name
-        )
+        # Check if we're in a deployment environment (read-only filesystem)
+        is_deployment = os.getenv('STREAMLIT_SERVER_PORT') is not None or os.getenv('GOOGLE_CREDENTIALS_JSON') is not None
+        
+        if is_deployment:
+            # Use in-memory vector store for deployment (no persistence)
+            vector_store = Chroma.from_texts(
+                texts=texts,
+                embedding=embeddings,
+                collection_name=collection_name
+            )
+        else:
+            # Use persistent vector store for local development
+            try:
+                import shutil
+                if VECTOR_DB_DIR.exists():
+                    shutil.rmtree(VECTOR_DB_DIR)
+                VECTOR_DB_DIR.mkdir(exist_ok=True)
+            except Exception as e:
+                print(f"Warning: Could not clear vector DB cache: {e}")
+            
+            vector_store = Chroma.from_texts(
+                texts=texts,
+                embedding=embeddings,
+                persist_directory=str(VECTOR_DB_DIR),
+                collection_name=collection_name
+            )
         
         return vector_store.as_retriever(search_kwargs={"k": TOP_K_RESULTS})
         

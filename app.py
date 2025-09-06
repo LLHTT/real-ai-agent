@@ -4,6 +4,15 @@ from ai_agent import create_agent
 from utils.config import DATABASE_SOURCES, DEFAULT_SHEET_URL
 import time
 
+# Fix SQLite version issue for ChromaDB (only for deployment)
+try:
+    import pysqlite3
+    import sys
+    sys.modules['sqlite3'] = pysqlite3
+except ImportError:
+    # pysqlite3 not available, use system sqlite3 (local development)
+    pass
+
 # Cấu hình trang
 st.set_page_config(page_title="RealEstate AI Agent", layout="wide")
 st.title("🏠 AI Trợ lý Bất động sản TP.HCM")
